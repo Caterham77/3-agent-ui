@@ -18,11 +18,14 @@ from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
+from google_auth_oauthlib.flow import Flow
+
+
 # --- Load environment variables ---
 load_dotenv()
 
 # OpenAI setup
-openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 # Google OAuth2 setup
@@ -38,10 +41,22 @@ def login_user():
     global current_credentials
     global current_calendar_id
 
-    flow = InstalledAppFlow.from_client_secrets_file(
-        CLIENT_SECRET_FILE,
-        scopes=SCOPES
-    )
+  
+
+    flow = Flow.from_client_config(
+        {
+            "installed": {
+                "client_id": st.secrets["GOOGLE_CLIENT_ID"],
+                "client_secret": st.secrets["GOOGLE_CLIENT_SECRET"],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        },
+        scopes=SCOPES,
+    redirect_uri="http://localhost:8080"  # or another valid redirect for Streamlit Cloud if applicable
+)
+
+
 
     current_credentials = flow.run_local_server(
         port=8080,
