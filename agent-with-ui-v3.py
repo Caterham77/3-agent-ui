@@ -21,6 +21,7 @@ from langchain.chains import RetrievalQA
 from google_auth_oauthlib.flow import Flow
 
 
+
 # --- Load environment variables ---
 load_dotenv()
 
@@ -37,11 +38,11 @@ current_credentials = None
 current_calendar_id = None
 
 # --- Authentication Functions ---
+
+
 def login_user():
     global current_credentials
     global current_calendar_id
-
-  
 
     flow = Flow.from_client_config(
         {
@@ -52,9 +53,24 @@ def login_user():
                 "token_uri": "https://oauth2.googleapis.com/token"
             }
         },
-        scopes=SCOPES,
-    redirect_uri="http://localhost:8080"  # or another valid redirect for Streamlit Cloud if applicable
-)
+        scopes=["https://www.googleapis.com/auth/calendar"],
+        redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+    )
+
+    auth_url, _ = flow.authorization_url(prompt="consent")
+    st.markdown(f"[Click here to authorize Google Calendar access]({auth_url})")
+
+    auth_code = st.text_input("Paste the authorization code from Google here:")
+
+    if auth_code:
+        try:
+            flow.fetch_token(code=auth_code)
+            current_credentials = flow.credentials
+            st.success("✅ Authorization successful!")
+            current_calendar_id = get_primary_calendar_id(current_credentials)
+        except Exception as e:
+            st.error(f"❌ Failed to authorize: {e}")
+
 
 
 
